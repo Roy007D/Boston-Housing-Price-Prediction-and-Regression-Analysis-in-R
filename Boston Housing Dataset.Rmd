@@ -1,0 +1,106 @@
+---
+title: "Boston Housing Dataset"
+output: html_document
+date: "2025-12-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+#load Boston Housing dataset
+library(mlbench)
+data(BostonHousing)
+```
+
+```{r}
+#set seed to ensure reproducible results
+set.seed(42)
+```
+
+```{r}
+#split into training and test sets
+BostonHousing[, "train"] <- ifelse(runif(nrow(BostonHousing)) < 0.8, 1, 0)
+```
+
+```{r}
+#separate training and test sets
+trainset <- BostonHousing[BostonHousing$train==1,]
+testset <- BostonHousing[BostonHousing$train==0,]
+```
+
+```{r}
+#get column index of train flag
+trainColNum <- grep("train",names(trainset))
+```
+
+```{r}
+#remove train flag column from train and test sets
+trainset <- trainset[,-trainColNum]
+testset <- testset[,-trainColNum]
+```
+
+```{r}
+install.packages("rpart")
+library(rpart)
+```
+
+```{r}
+#build model
+rpart_model <- rpart(medv ~ ., data = trainset, method = "anova")
+```
+
+```{r}
+#plot tree
+plot(rpart_model);text(rpart_model)
+```
+
+```{r}
+#…the moment of reckoning
+typeColNum <- which(names(testset) == "medv")
+rpart_test_predict <- predict(
+  rpart_model,
+  testset[, -typeColNum]
+)
+```
+
+```{r}
+#calculate RMS error
+rmse <- sqrt(mean((rpart_test_predict - testset$medv)^2))
+```
+
+```{r}
+# Display RMSE
+rmse
+```
+
+```{r}
+# get index of CP with lowest xerror
+opt <- which.min(rpart_model$cptable[,"xerror"])
+```
+
+```{r}
+#get its value
+cp <- rpart_model$cptable[opt, "CP"]
+```
+
+```{r}
+#prune tree
+pruned_model <- prune(rpart_model,cp)
+```
+
+```{r}
+#plot tree
+plot(pruned_model);text(pruned_model)
+```
+```{r}
+
+```
+
